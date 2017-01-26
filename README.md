@@ -1,5 +1,3 @@
-A simple way to view Twitch's IRC messages.
-
 A simple program for seeing what twitch sends to clients connected via IRC.
 
 !!! Warning!!! :
