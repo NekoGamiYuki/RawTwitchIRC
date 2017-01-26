@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Author: NekoGamiYuki
-Version: 1.0.0
+Version: 1.1.0
 
 Description:
 A simple program for seeing what twitch sends to clients connected via IRC.
