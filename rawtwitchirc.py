@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Author: NekoGamiYuki
 Version: 1.0.0
