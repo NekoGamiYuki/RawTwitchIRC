@@ -105,17 +105,18 @@ if __name__ == "__main__":
     if not send_info("NICK {}\r\n".format(username)):
         print("Failed to send username.")
 
-    # For an IRCv3 membership; Gives us NAMES, JOIN, PART, and MODE events
-    print("Requesting IRCv3 membership.")
-    send_info("CAP REQ :twitch.tv/membership\r\n")
-    # For enabling USERSTATE, GLOBALUSERSTATE, ROOMSTATE, HOSTTARGET, NOTICE
-    # and CLEARCHAT raw commands.
-    print("Requesting commands.")
-    send_info("CAP REQ :twitch.tv/commands\r\n")
-    # For detailed information from messages. Getting stuff like the user's
-    # color, emotes, etc...
-    print("Requesting tags.")
-    send_info("CAP REQ :twitch.tv/tags\r\n")
+    if tags:
+        # For an IRCv3 membership; Gives us NAMES, JOIN, PART, and MODE events
+        print("Requesting IRCv3 membership.")
+        send_info("CAP REQ :twitch.tv/membership\r\n")
+        # For enabling USERSTATE, GLOBALUSERSTATE, ROOMSTATE, HOSTTARGET, NOTICE
+        # and CLEARCHAT raw commands.
+        print("Requesting commands.")
+        send_info("CAP REQ :twitch.tv/commands\r\n")
+        # For detailed information from messages. Getting stuff like the user's
+        # color, emotes, etc...
+        print("Requesting tags.")
+        send_info("CAP REQ :twitch.tv/tags\r\n")
 
     for channel in channels:
         print("Joining: {}".format(channel))
