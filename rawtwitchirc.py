@@ -71,98 +71,97 @@ def send_info(info: str) -> bool:
 
 
 # Main program -----------------------------------------------------------------
-if __name__ == "__main__":
-    username = ""  # The username of the account you're using to read chat.
-    oauth = ""  # You can get your oauth here: https://twitchapps.com/tmi/
-    channels = [""]  # A list of channels to join and read chat from.
-    timeout = 600  # (10 minutes) Time we'll wait, in seconds, before closing our connection.
-    tags = True  # If true, program will request that twitch give us more detailed information.
+username = ""  # The username of the account you're using to read chat.
+oauth = ""  # You can get your oauth here: https://twitchapps.com/tmi/
+channels = [""]  # A list of channels to join and read chat from.
+timeout = 600  # (10 minutes) Time we'll wait, in seconds, before closing our connection.
+tags = True  # If true, program will request that twitch give us more detailed information.
 
-    print("Checking for username or oauth.")
-    if not username or not oauth:
-        print("Username or Oauth missing. Exiting.")
-        sys.exit()
+print("Checking for username or oauth.")
+if not username or not oauth:
+    print("Username or Oauth missing. Exiting.")
+    sys.exit()
 
-    print("Creating socket.")
-    # Connect to twitch using TCP and IPV4
-    SOCK = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    SOCK.settimeout(timeout)  #
+print("Creating socket.")
+# Connect to twitch using TCP and IPV4
+SOCK = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+SOCK.settimeout(timeout)  #
+try:
+    print("Connecting socket to twitch.")
+    SOCK.connect((TWITCH, PORT))
+except socket.error:
+    print("Unable to connect socket.")
+    SOCK.close()
+    print("Exiting.")
+    sys.exit()
+
+print("Logging in.")
+print("Sending oauth.")
+if not send_info("PASS {}\r\n".format(oauth)):
+    print("Failed to send oauth.")
+
+print("Sending username: {}".format(username))
+if not send_info("NICK {}\r\n".format(username)):
+    print("Failed to send username.")
+
+if tags:
+    # For an IRCv3 membership; Gives us NAMES, JOIN, PART, and MODE events
+    print("Requesting IRCv3 membership.")
+    send_info("CAP REQ :twitch.tv/membership\r\n")
+    # For enabling USERSTATE, GLOBALUSERSTATE, ROOMSTATE, HOSTTARGET, NOTICE
+    # and CLEARCHAT raw commands.
+    print("Requesting commands.")
+    send_info("CAP REQ :twitch.tv/commands\r\n")
+    # For detailed information from messages. Getting stuff like the user's
+    # color, emotes, etc...
+    print("Requesting tags.")
+    send_info("CAP REQ :twitch.tv/tags\r\n")
+
+for channel in channels:
+    print("Joining: {}".format(channel))
+    if not send_info("JOIN #{}\r\n".format(channel)):
+        print("Could not join: {}".format(channel))
+
+while True:
     try:
-        print("Connecting socket to twitch.")
-        SOCK.connect((TWITCH, PORT))
-    except socket.error:
-        print("Unable to connect socket.")
-        SOCK.close()
-        print("Exiting.")
-        sys.exit()
-
-    print("Logging in.")
-    print("Sending oauth.")
-    if not send_info("PASS {}\r\n".format(oauth)):
-        print("Failed to send oauth.")
-
-    print("Sending username: {}".format(username))
-    if not send_info("NICK {}\r\n".format(username)):
-        print("Failed to send username.")
-
-    if tags:
-        # For an IRCv3 membership; Gives us NAMES, JOIN, PART, and MODE events
-        print("Requesting IRCv3 membership.")
-        send_info("CAP REQ :twitch.tv/membership\r\n")
-        # For enabling USERSTATE, GLOBALUSERSTATE, ROOMSTATE, HOSTTARGET, NOTICE
-        # and CLEARCHAT raw commands.
-        print("Requesting commands.")
-        send_info("CAP REQ :twitch.tv/commands\r\n")
-        # For detailed information from messages. Getting stuff like the user's
-        # color, emotes, etc...
-        print("Requesting tags.")
-        send_info("CAP REQ :twitch.tv/tags\r\n")
-
-    for channel in channels:
-        print("Joining: {}".format(channel))
-        if not send_info("JOIN #{}\r\n".format(channel)):
-            print("Could not join: {}".format(channel))
-
-    while True:
+        print('-'*80)
+        print("Requesting information from twitch.")
         try:
-            print('-'*80)
-            print("Requesting information from twitch.")
-            try:
-                information = SOCK.recv(4096)
-            except socket.timeout:
-                print("Connection timed out.")
-                SOCK.close()
-                print("Exiting.")
-                sys.exit()
-
-            print("Attempting to decode twitch information.")
-            try:
-                # ??? utf-8 is required, as twitch is a multi-lingual platform and there are
-                # times when a user might post in a character set that isn't ascii, such
-                # as when typing in a foreign language. Without utf-8 decoding, the program
-                # crashes at the sight of a foreign character.
-                information = information.decode("utf-8")
-            except UnicodeDecodeError:
-                # But sadly, this still has some issues when it comes to unicode.
-                # There are times when it is still unable to decode a character, causing
-                # the program to crash.
-                print("Failed to decode information. Printing raw information instead.")
-                print(information)
-
-            if not information:
-                print("Received no information.")
-            elif information == "PING :tmi.twitch.tv\r\n":  # Ping Pong time.
-                print("Received PING, sending PONG.")
-                if not send_info("PONG :tmi.twitch.tv\r\n"):
-                    print("Failed to send PONG.")
-                else:
-                    continue
-            else:
-                print("TWITCH INFO: {}".format(information))
-        except KeyboardInterrupt:
-            print("Closing socket and exiting program loop.")
+            information = SOCK.recv(4096)
+        except socket.timeout:
+            print("Connection timed out.")
             SOCK.close()
-            break
+            print("Exiting.")
+            sys.exit()
 
-    print("Exiting program.")
+        print("Attempting to decode twitch information.")
+        try:
+            # ??? utf-8 is required, as twitch is a multi-lingual platform and there are
+            # times when a user might post in a character set that isn't ascii, such
+            # as when typing in a foreign language. Without utf-8 decoding, the program
+            # crashes at the sight of a foreign character.
+            information = information.decode("utf-8")
+        except UnicodeDecodeError:
+            # But sadly, this still has some issues when it comes to unicode.
+            # There are times when it is still unable to decode a character, causing
+            # the program to crash.
+            print("Failed to decode information. Printing raw information instead.")
+            print(information)
+
+        if not information:
+            print("Received no information.")
+        elif information == "PING :tmi.twitch.tv\r\n":  # Ping Pong time.
+            print("Received PING, sending PONG.")
+            if not send_info("PONG :tmi.twitch.tv\r\n"):
+                print("Failed to send PONG.")
+            else:
+                continue
+        else:
+            print("TWITCH INFO: {}".format(information))
+    except KeyboardInterrupt:
+        print("Closing socket and exiting program loop.")
+        SOCK.close()
+        break
+
+print("Exiting program.")
 
