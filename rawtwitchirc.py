@@ -124,38 +124,45 @@ if __name__ == "__main__":
             print("Could not join: {}".format(channel))
 
     while True:
-        print('-'*80)
-        print("Requesting information from twitch.")
         try:
-            information = SOCK.recv(4096)
-        except socket.timeout:
-            print("Connection timed out.")
-            SOCK.close()
-            print("Exiting.")
-            sys.exit()
+            print('-'*80)
+            print("Requesting information from twitch.")
+            try:
+                information = SOCK.recv(4096)
+            except socket.timeout:
+                print("Connection timed out.")
+                SOCK.close()
+                print("Exiting.")
+                sys.exit()
 
-        print("Attempting to decode twitch information.")
-        try:
-            # ??? utf-8 is required, as twitch is a multi-lingual platform and there are
-            # times when a user might post in a character set that isn't ascii, such
-            # as when typing in a foreign language. Without utf-8 decoding, the program
-            # crashes at the sight of a foreign character.
-            information = information.decode("utf-8")
-        except UnicodeDecodeError:
-            # But sadly, this still has some issues when it comes to unicode.
-            # There are times when it is still unable to decode a character, causing
-            # the program to crash.
-            print("Failed to decode information. Printing raw information instead.")
-            print(information)
+            print("Attempting to decode twitch information.")
+            try:
+                # ??? utf-8 is required, as twitch is a multi-lingual platform and there are
+                # times when a user might post in a character set that isn't ascii, such
+                # as when typing in a foreign language. Without utf-8 decoding, the program
+                # crashes at the sight of a foreign character.
+                information = information.decode("utf-8")
+            except UnicodeDecodeError:
+                # But sadly, this still has some issues when it comes to unicode.
+                # There are times when it is still unable to decode a character, causing
+                # the program to crash.
+                print("Failed to decode information. Printing raw information instead.")
+                print(information)
 
-        if not information:
-            print("Received no information.")
-        elif information == "PING :tmi.twitch.tv\r\n":  # Ping Pong time.
-            print("Received PING, sending PONG.")
-            if not send_info("PONG :tmi.twitch.tv\r\n"):
-                print("Failed to send PONG.")
+            if not information:
+                print("Received no information.")
+            elif information == "PING :tmi.twitch.tv\r\n":  # Ping Pong time.
+                print("Received PING, sending PONG.")
+                if not send_info("PONG :tmi.twitch.tv\r\n"):
+                    print("Failed to send PONG.")
+                else:
+                    continue
             else:
-                continue
-        else:
-            print("TWITCH INFO: {}".format(information))
+                print("TWITCH INFO: {}".format(information))
+        except KeyboardInterrupt:
+            print("Closing socket and exiting program loop.")
+            SOCK.close()
+            break
+
+    print("Exiting program.")
 
