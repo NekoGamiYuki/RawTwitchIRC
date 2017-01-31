@@ -6,17 +6,13 @@ Version: 1.1.0
 Description:
 A simple program for seeing what twitch sends to clients connected via IRC.
 
-Warning:
-Currently does not check if login succeeded. However, you will know if you failed
-when the program starts spamming like crazy that it's requesting information from
-Twitch without printing out any Twitch chat messages.
-
 More about Twitch IRC can be found here:
 https://github.com/justintv/Twitch-API/blob/master/IRC.md
 """
 
 # Imported Modules--------------------------------------------------------------
 import socket
+import errno
 import time
 import sys
 
@@ -103,6 +99,20 @@ if not send_info("PASS {}\r\n".format(oauth)):
 print("Sending username: {}".format(username))
 if not send_info("NICK {}\r\n".format(username)):
     print("Failed to send username.")
+
+# Checking if login succeeded
+login_check = ''
+try:
+    login_check = SOCK.recv(512).decode("utf-8")
+except socket.error as e:
+    if e.errno == errno.ECONNRESET:
+        SOCK.close()
+        print("Connection was closed by Twitch. Exiting program.")
+        sys.exit()
+
+if "Login authentication failed" in login_check:
+    print("Failed to log in. Exiting program.")
+    sys.exit()
 
 if tags:
     # For an IRCv3 membership; Gives us NAMES, JOIN, PART, and MODE events
